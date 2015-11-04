@@ -1,0 +1,49 @@
+import random, re
+from halibot import HalModule
+
+die_re = re.compile("(\d+)[dD](\d+)")
+
+class DiceModule(HalModule):
+
+	def roll(self, count, sides):
+		if count == 0:
+			return "0"
+		if count < 0:
+			# This shouldn't actually be possible as the regex doesn't match -
+			return "You can't think of a way to roll a dice {} times.".format(count)
+		if sides < 1:
+			return "You find it difficult to roll a die with {} sides.".format(sides)
+
+		total = 0
+		response = ''
+
+		for i in range(0, count):
+			x = random.randint(1, sides)
+			total += x 
+			response += "{}/{}".format(x, sides)
+
+			if i != count - 1:
+				response += " + "
+
+		response += " = {}".format(total)
+
+		return response
+
+	def receive(self, msg):
+		coarse = msg.body.strip().split(" ")
+		cmd = coarse[0]
+		rolls = list(filter( lambda x: re.match(die_re, x), coarse[1:] ))
+
+		if cmd == '!roll':
+			if len(rolls) == 0:
+				self.reply(msg, body="You make a motion as if to roll some dice, but as you open your hands to throw them, only air escapes.")
+				return
+
+			for r in rolls:
+				m = re.match(die_re, r)
+				count = int(m.group(1))
+				sides = int(m.group(2))
+
+				response = self.roll(count, sides)
+				self.reply(msg, body=response)
+
