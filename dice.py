@@ -14,6 +14,9 @@ class DiceModule(HalModule):
 		if sides < 1:
 			return "You find it difficult to roll a die with {} sides.".format(sides)
 
+		if count > 10 or sides > 100000:
+			return "No."
+
 		total = 0
 		response = ''
 
