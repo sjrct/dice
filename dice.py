@@ -3,7 +3,15 @@ from halibot import HalModule
 
 die_re = re.compile("(\d+)[dD](\d+)")
 
+MAX_COUNT = 10
+MAX_SIDES = 10000
+
 class DiceModule(HalModule):
+
+	class Configurer(HalConfigurer):
+		def configure(self):
+			self.optionInt("max-count", prompt="Max number of dice to roll at once", default=MAX_COUNT)
+			self.optionInt("max-sides", prompt="Max number of sides per die", default=MAX_SIDES) 
 
 	def roll(self, count, sides):
 		if count == 0:
@@ -14,7 +22,7 @@ class DiceModule(HalModule):
 		if sides < 1:
 			return "You find it difficult to roll a die with {} sides.".format(sides)
 
-		if count > 10 or sides > 100000:
+		if count > self.config.get("max-count", MAX_COUNT) or sides > self.config.get("max-sides", MAX_SIDES):
 			return "No."
 
 		total = 0
