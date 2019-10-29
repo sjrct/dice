@@ -1,19 +1,30 @@
 import random, re
-from halibot import HalModule
+from halibot import CommandModule, HalConfigurer
 
 die_re = re.compile("(\d+)[dD](\d+)")
 
 MAX_COUNT = 10
 MAX_SIDES = 10000
 
-class DiceModule(HalModule):
+class DiceModule(CommandModule):
 
 	class Configurer(HalConfigurer):
 		def configure(self):
 			self.optionInt("max-count", prompt="Max number of dice to roll at once", default=MAX_COUNT)
 			self.optionInt("max-sides", prompt="Max number of sides per die", default=MAX_SIDES) 
 
-	def roll(self, count, sides):
+	def init(self):
+		self.commands = { "roll": self.roll_ }
+
+	def _roll(self, roll):
+		m = re.match(die_re, roll)
+
+		if not m:
+			return self._err()
+
+		count = int(m.group(1))
+		sides = int(m.group(2))
+
 		if count == 0:
 			return "0"
 		if count < 0:
@@ -40,21 +51,17 @@ class DiceModule(HalModule):
 
 		return response
 
-	def receive(self, msg):
-		coarse = msg.body.strip().split(" ")
-		cmd = coarse[0]
-		rolls = list(filter( lambda x: re.match(die_re, x), coarse[1:] ))
+	def _err(self):
+		return "You make a motion as if to roll some dice, but as you open your hands to throw them, only air escapes."
 
-		if cmd == '!roll':
-			if len(rolls) == 0:
-				self.reply(msg, body="You make a motion as if to roll some dice, but as you open your hands to throw them, only air escapes.")
-				return
+	def roll_(self, string, msg=None):
+		args = string.strip().split(" ")
 
-			for r in rolls:
-				m = re.match(die_re, r)
-				count = int(m.group(1))
-				sides = int(m.group(2))
+		if len(args) == 0:
+			self.reply(msg, body=self._err())
+			return
 
-				response = self.roll(count, sides)
-				self.reply(msg, body=response)
+		for r in args:
+			response = self._roll(r)
+			self.reply(msg, body=response)
 
